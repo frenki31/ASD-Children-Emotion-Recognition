@@ -26,6 +26,7 @@ class FaceRecognition:
     face_names = []
     known_face_encodings = []
     known_face_names = []
+    people_emotions = {}
     current_frame = True
 
     def __init__(self):
@@ -104,14 +105,15 @@ class FaceRecognition:
 
             self.current_frame = not self.current_frame
 
-            people_emotions = {}
             for name, emotion in zip(self.face_names, self.face_emotions):
-                if emotion not in people_emotions:
-                    people_emotions[emotion] = []
-                people_emotions[emotion].append(name)
-
-            for people, emotion in people_emotions.items():
-                print(f'{emotion}: {people}')
+                # get only the name
+                name_without_confidence = " ".join(name.split(" ")[:-1])
+                # count the occurrences of people's emotions
+                if name_without_confidence not in self.people_emotions:
+                    self.people_emotions[name_without_confidence] = {}
+                if emotion not in self.people_emotions[name_without_confidence]:
+                    self.people_emotions[name_without_confidence][emotion] = 1
+                self.people_emotions[name_without_confidence][emotion] += 1
 
             for (top, right, bottom, left), name, emotion in zip(self.face_locations, self.face_names, self.face_emotions):
                 top *= 4
@@ -132,6 +134,28 @@ class FaceRecognition:
 
         video_capture.release()
         cv2.destroyAllWindows()
+
+        # Save people's emotions to a file
+        file_path = 'people_emotions.txt'
+        max_count = 0
+        emotion_with_max_count = []
+        with open(file_path, 'w') as file:
+            for person, person_emotions in self.people_emotions.items():
+                for emotion, count in person_emotions.items():
+                    if count > max_count:
+                        max_count = count
+                        emotion_with_max_count = [emotion]
+                    elif count == max_count:
+                        emotion_with_max_count.append(emotion)
+                    line = f'{person} was {emotion} {count} times\n'
+                    if len(emotion_with_max_count) == 1:
+                        line2 = f'{person} was mostly {emotion_with_max_count[0]} while doing this activity\n'
+                    else:
+                        line2 = f'{person} had a mix of emotions while doing this activity'
+                    file.write(line)
+                file.write(line2+"\n")
+
+        print(f"Emotion information saved to {file_path}")
 
 
 if __name__ == "__main__":
