@@ -5,7 +5,7 @@ import numpy as np
 import math
 from keras.models import load_model
 
-model = load_model(r'C:\Users\user\PycharmProjects\emotionRecognition\model.h5')
+model = load_model(r'C:\Users\user\PycharmProjects\emotionRecognition\emotion_detection_model.h5')
 emotions = ['Angry','Disgusted','Fearful','Happy','Neutral', 'Sad', 'Surprised']
 
 
@@ -43,11 +43,12 @@ class FaceRecognition:
                 for image in folder_items:
                     image_path = os.path.join(folder_path, image)
                     img = face_recognition.load_image_file(image_path)
-                    encodings = face_recognition.face_encodings(img)[0]
-                    self.known_face_encodings.append(encodings)
-            self.known_face_names.append(folder)
-
-        print(self.known_face_names)
+                    encodings = face_recognition.face_encodings(img)
+                    if len(encodings) > 0:
+                        # if there is more than one face
+                        encoding = encodings[0]
+                        self.known_face_encodings.append(encoding)
+                        self.known_face_names.append(folder)
 
     def run_recognition(self):
         video_capture = cv2.VideoCapture(0)
