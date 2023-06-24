@@ -4,6 +4,8 @@ import cv2
 import numpy as np
 import math
 from keras.models import load_model
+import tkinter as tk
+from tkinter import simpledialog
 
 model = load_model(r'C:\Users\user\PycharmProjects\emotionRecognition\emotion_detection_model.h5')
 emotions = ['Angry','Disgusted','Fearful','Happy','Neutral', 'Sad', 'Surprised']
@@ -28,6 +30,7 @@ class FaceRecognition:
     known_face_names = []
     people_emotions = {}
     current_frame = True
+    frame_list = []
 
     def __init__(self):
         self.encode_faces()
@@ -52,6 +55,10 @@ class FaceRecognition:
                         self.known_face_names.append(folder)
 
     def run_recognition(self):
+        window = tk.Tk()
+        window.withdraw()
+        activity = simpledialog.askstring("Activity", "What is the main activity for now?")
+        window.destroy()
         video_capture = cv2.VideoCapture(0)
 
         if not video_capture.isOpened():
@@ -126,6 +133,9 @@ class FaceRecognition:
                 cv2.rectangle(frame, (left, top), (right, top + 35), (0, 0, 255), -1)
                 cv2.putText(frame, name, (left + 6, bottom - 6), cv2.FONT_HERSHEY_DUPLEX, 0.8, (255, 255, 255), 1)
                 cv2.putText(frame, emotion, (left + 6, top + 20), cv2.FONT_HERSHEY_DUPLEX, 0.8, (255, 255, 255), 1)
+                self.frame_list.append(frame)
+                height, width, colors = frame.shape
+                size = (width, height)
 
             cv2.imshow('Face recognition', frame)
 
@@ -134,6 +144,14 @@ class FaceRecognition:
 
         video_capture.release()
         cv2.destroyAllWindows()
+
+        # save a video record
+        output_path = 'Emotions_record.mp4'
+        output = cv2.VideoWriter(output_path, cv2.VideoWriter_fourcc(*"mp4v"), 30, size)
+
+        for frame in self.frame_list:
+            output.write(frame)
+        output.release()
 
         # Save people's emotions to a file
         file_path = 'people_emotions.txt'
@@ -149,9 +167,14 @@ class FaceRecognition:
                         emotion_with_max_count.append(emotion)
                     line = f'{person} was {emotion} {count} times\n'
                     if len(emotion_with_max_count) == 1:
-                        line2 = f'{person} was mostly {emotion_with_max_count[0]} while doing this activity\n'
+                        if emotion_with_max_count[0] in ["Happy","Surprised"]:
+                            line2 = f'{person} was {emotion_with_max_count[0]} most of the time. {person} likes "{activity}".\n'
+                        elif emotion_with_max_count[0] in ["Sad", "Angry", "Disgusted", "Fearful"]:
+                            line2 = f'{person} was {emotion_with_max_count[0]} most of the time. {person} does not like "{activity}".\n'
+                        elif emotion_with_max_count[0] == "Neutral":
+                            line2 = f'{person} was {emotion_with_max_count[0]} most of the time. {person} might like "{activity}".\n'
                     else:
-                        line2 = f'{person} had a mix of emotions while doing this activity'
+                        line2 = f'{person} had a mix of emotions while doing: {activity}'
                     file.write(line)
                 file.write(line2+"\n")
 
