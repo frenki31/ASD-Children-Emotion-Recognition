@@ -6,6 +6,7 @@ import math
 from keras.models import load_model
 import tkinter as tk
 from tkinter import simpledialog
+from datetime import datetime
 
 model = load_model(r'C:\Users\user\PycharmProjects\emotionRecognition\emotion_detection_model.h5')
 emotions = ['Angry','Disgusted','Fearful','Happy','Neutral', 'Sad', 'Surprised']
@@ -57,9 +58,11 @@ class FaceRecognition:
     def run_recognition(self):
         window = tk.Tk()
         window.withdraw()
-        activity = simpledialog.askstring("Activity", "What is the main activity for now?")
+        teacher = simpledialog.askstring("Teacher", "Teacher, can you please introduce yourself?")
+        activity = simpledialog.askstring("Activity", f'{teacher}, what is the activity for today?')
         window.destroy()
-        video_capture = cv2.VideoCapture(0)
+        video_capture = cv2.VideoCapture('video.mp4')
+        video_capture.set(cv2.CAP_PROP_FPS, 60)
 
         if not video_capture.isOpened():
             print('Video source not found...')
@@ -146,7 +149,7 @@ class FaceRecognition:
         cv2.destroyAllWindows()
 
         # save a video record
-        output_path = 'Emotions_record.mp4'
+        output_path = 'emotions_record.mp4'
         output = cv2.VideoWriter(output_path, cv2.VideoWriter_fourcc(*"mp4v"), 30, size)
 
         for frame in self.frame_list:
@@ -155,29 +158,31 @@ class FaceRecognition:
 
         # Save people's emotions to a file
         file_path = 'people_emotions.txt'
-        max_count = 0
-        emotion_with_max_count = []
+        emotion_with_max_count = {}
         with open(file_path, 'w') as file:
+            now = datetime.now()
+            file.write(f'Today on {now:%d/%m/%Y} teacher {teacher} taught the children: "{activity}"\n\n')
             for person, person_emotions in self.people_emotions.items():
-                for emotion, count in person_emotions.items():
-                    if count > max_count:
-                        max_count = count
-                        emotion_with_max_count = [emotion]
-                    elif count == max_count:
-                        emotion_with_max_count.append(emotion)
-                    line = f'{person} was {emotion} {count} times\n'
-                    if len(emotion_with_max_count) == 1:
-                        if emotion_with_max_count[0] in ["Happy","Surprised"]:
-                            line2 = f'{person} was {emotion_with_max_count[0]} most of the time. {person} likes "{activity}".\n'
-                        elif emotion_with_max_count[0] in ["Sad", "Angry", "Disgusted", "Fearful"]:
-                            line2 = f'{person} was {emotion_with_max_count[0]} most of the time. {person} does not like "{activity}".\n'
-                        elif emotion_with_max_count[0] == "Neutral":
-                            line2 = f'{person} was {emotion_with_max_count[0]} most of the time. {person} might like "{activity}".\n'
+                emotions_count = ', '.join([f'{emotion} {count} times' for emotion, count in person_emotions.items()])
+                line = f'{person} was {emotions_count}\n'
+                if person_emotions:
+                    max_emotion_count = max(person_emotions.values())
+                    max_emotions = [emotion for emotion, count in person_emotions.items() if count == max_emotion_count]
+                    emotion_with_max_count[person] = ', '.join(max_emotions)
+                    if len(max_emotions) == 1:
+                        if emotion_with_max_count[person] in ["Happy","Surprised"]:
+                            line2 = f'{person} was {emotion_with_max_count[person]} most of the time. {person} likes "{activity}".\n'
+                        elif emotion_with_max_count[person] in ["Sad", "Angry", "Disgusted", "Fearful"]:
+                            line2 = f'{person} was {emotion_with_max_count[person]} most of the time. {person} does not like "{activity}".\n'
+                        elif emotion_with_max_count[person] == "Neutral":
+                            line2 = f'{person} was {emotion_with_max_count[person]} most of the time. {person} might like "{activity}".\n'
                     else:
-                        line2 = f'{person} had a mix of emotions while doing: {activity}'
-                    file.write(line)
-                file.write(line2+"\n")
+                        line2 = f'{person} had a mix of emotions while doing: {activity}\n'
+                else:
+                    line2 = f'{person} did not display any emotions while doing: {activity}\n'
+                file.write(f'{line}{line2}\n')
 
+        print(f"Video saved to {output_path}")
         print(f"Emotion information saved to {file_path}")
 
 
