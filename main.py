@@ -7,7 +7,18 @@ from keras.models import load_model
 import tkinter as tk
 from tkinter import simpledialog
 from datetime import datetime
+import pyodbc
+import pandas as pd
 
+server = 'DESKTOP-QT7MTFJ\SQLEXPRESS'
+database = 'ACTIVITY'
+username = 'sa'
+password = '1234'
+
+conn = pyodbc.connect(f'DRIVER={{SQL Server}};SERVER={server};DATABASE={database};UID={username};PWD={password}')
+if conn:
+    print('Connection okay')
+cursor = conn.cursor()
 model = load_model(r'C:\Users\user\PycharmProjects\emotionRecognition\emotion_detection_model.h5')
 emotions = ['Angry','Disgusted','Fearful','Happy','Neutral', 'Sad', 'Surprised']
 
@@ -61,8 +72,16 @@ class Recognition:
         teacher = simpledialog.askstring("Teacher", "Teacher, can you please introduce yourself?")
         activity = simpledialog.askstring("Activity", f'{teacher.split()[0]}, what is the activity for today?')
         window.destroy()
+        cursor.execute("SELECT COUNT(*) FROM TEACHER WHERE TEACH_FNAME = ? AND TEACH_LNAME = ?", teacher.split()[0], teacher.split()[1])
+        if cursor.fetchone()[0] == 0:
+            cursor.execute('INSERT INTO TEACHER(TEACH_FNAME, TEACH_LNAME) VALUES (?, ?)', (teacher.split()[0], teacher.split()[1]))
+            conn.commit()
+        cursor.execute("SELECT COUNT(*) FROM ACTIVITY WHERE ACT_NAME = ?", activity)
+        if cursor.fetchone()[0] == 0:
+            cursor.execute('INSERT INTO ACTIVITY(ACT_NAME) VALUES (?)', activity)
+            conn.commit()
         start_time = datetime.now()
-        video_capture = cv2.VideoCapture('ASD.mp4')
+        video_capture = cv2.VideoCapture('video (2160p).mp4')
 
         if not video_capture.isOpened():
             print('Video source not found...')
@@ -172,6 +191,13 @@ class Recognition:
                         person = simpledialog.askstring('Unknown Child',"Who is the unknown person?")
                     else:
                         person = "Many children"
+                # Check if person exists in the table
+                cursor.execute("SELECT COUNT(*) FROM CHILD WHERE CHILD_FNAME=? AND CHILD_LNAME=?", person.split()[0], person.split()[1])
+                if cursor.fetchone()[0] == 0:
+                    # Person doesn't exist, perform INSERT
+                    insert_query = "INSERT INTO CHILD (CHILD_FNAME, CHILD_LNAME) VALUES (?, ?)"
+                    cursor.execute(insert_query, (person.split()[0], person.split()[1]))
+                    conn.commit()
                 emotions_count = ', '.join([f'{emotion} {count} times' for emotion, count in person_emotions.items()])
                 if person == "Many children":
                     line = f'{person} were {emotions_count}.'
@@ -188,15 +214,26 @@ class Recognition:
             do_not_like_activity = [person for person, emotion in emotion_with_max_count.items() if emotion in ["Sad", "Fearful", "Angry", "Disgusted"]]
             might_like_activity = [person for person, emotion in emotion_with_max_count.items() if emotion in ["Neutral"]]
             many_emotions = [person for person, emotion in emotion_with_max_count.items() if len(emotion.split(',')) > 1]
+            stored_procedure = 'EXEC SP_INSERT_INTO_ACT_TEACH_CHILD @act_name=?, @teach_fname=?, @teach_lname=?, @child_fname=?, @child_lname=?, @act_st=?, @act_et=?, @like=?'
             if like_activity:
                 file.write(f'\nThe children who like to do "{activity}": {", ".join(like_activity)}.\n')
+                cursor.execute(stored_procedure, activity, teacher.split()[0],teacher.split()[1], person.split()[0], person.split()[1], start_time, end_time, "Likes")
             if do_not_like_activity:
                 file.write(f'\nThe children who do not like to do "{activity}": {", ".join(do_not_like_activity)}.\n')
+                cursor.execute(stored_procedure, activity, teacher.split()[0],teacher.split()[1], person.split()[0], person.split()[1], start_time, end_time, "Does not like")
             if might_like_activity:
                 file.write(f'\nThe children who might like to do "{activity}": {", ".join(might_like_activity)}.\n')
+                cursor.execute(stored_procedure, activity, teacher.split()[0],teacher.split()[1], person.split()[0], person.split()[1], start_time, end_time, "Might like")
             if many_emotions:
                 file.write(f'\nThe children who had many different emotions while doing "{activity}": {", ".join(many_emotions)}.\n')
+                cursor.execute(stored_procedure, activity, teacher.split()[0],teacher.split()[1], person.split()[0], person.split()[1], start_time, end_time, "Not sure")
+            conn.commit()
+            cursor.close()
 
+            query = "Select * from ACT_TEACH_CHILD"
+            df = pd.read_sql(query, conn)
+            print(df)
+            conn.close()
         print(f"Video saved to {output_path}")
         print(f"Emotion information saved to {file_path}")
 
