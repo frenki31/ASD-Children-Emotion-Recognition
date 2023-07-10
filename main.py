@@ -22,7 +22,6 @@ cursor = conn.cursor()
 model = load_model(r'C:\Users\user\PycharmProjects\emotionRecognition\emotion_detection_model.h5')
 emotions = ['Angry','Disgusted','Fearful','Happy','Neutral', 'Sad', 'Surprised']
 
-
 def face_matching(face_distance, face_match=0.6):
     range = (1.0 - face_match)
     linear_value = (1.0-face_distance) / (range * 2.0)
@@ -75,13 +74,13 @@ class Recognition:
         cursor.execute("SELECT COUNT(*) FROM TEACHER WHERE TEACH_FNAME = ? AND TEACH_LNAME = ?", teacher.split()[0], teacher.split()[1])
         if cursor.fetchone()[0] == 0:
             cursor.execute('INSERT INTO TEACHER(TEACH_FNAME, TEACH_LNAME) VALUES (?, ?)', (teacher.split()[0], teacher.split()[1]))
-            conn.commit()
+            # conn.commit()
         cursor.execute("SELECT COUNT(*) FROM ACTIVITY WHERE ACT_NAME = ?", activity)
         if cursor.fetchone()[0] == 0:
             cursor.execute('INSERT INTO ACTIVITY(ACT_NAME) VALUES (?)', activity)
-            conn.commit()
+            # conn.commit()
         start_time = datetime.now()
-        video_capture = cv2.VideoCapture('video (2160p).mp4')
+        video_capture = cv2.VideoCapture(0)
 
         if not video_capture.isOpened():
             print('Video source not found...')
@@ -182,7 +181,7 @@ class Recognition:
         with open(file_path, 'w') as file:
 
             line0 = f'Today on {start_time:%d/%m/%Y} teacher {teacher} taught the children: "{activity}".\n' \
-                    f'The session began at {start_time:%H:%M} and ended at {end_time:%H:%M}.\n'
+                    f'The session began at {start_time:%H:%M:%S} and ended at {end_time:%H:%M:%S}.\n'
             file.write(f'{line0}\n')
             for person, person_emotions in self.people_emotions.items():
                 if person == "Unknown":
@@ -197,7 +196,7 @@ class Recognition:
                     # Person doesn't exist, perform INSERT
                     insert_query = "INSERT INTO CHILD (CHILD_FNAME, CHILD_LNAME) VALUES (?, ?)"
                     cursor.execute(insert_query, (person.split()[0], person.split()[1]))
-                    conn.commit()
+                    # conn.commit()
                 emotions_count = ', '.join([f'{emotion} {count} times' for emotion, count in person_emotions.items()])
                 if person == "Many children":
                     line = f'{person} were {emotions_count}.'
@@ -230,9 +229,19 @@ class Recognition:
             conn.commit()
             cursor.close()
 
-            query = "Select * from ACT_TEACH_CHILD"
-            df = pd.read_sql(query, conn)
-            print(df)
+            question = simpledialog.askstring('Question', 'Do you want to have your all-time report? (y/n)')
+            if question in ['y','Y','Yes','yes']:
+                query = f"EXEC SP_TEACHER_REPORT @teach_fname = '{teacher.split()[0]}', @teach_lname='{teacher.split()[1]}'"
+                df = pd.read_sql(query, conn)
+                table = f'{df.to_string(index=False)}\n'
+                with open('report.txt', 'w') as file:
+                    file.write(table)
+                    question1 = simpledialog.askstring('Question', 'Do you want the children names in your all-time report? (y/n)')
+                    if question1 in ['y','Y','Yes','yes']:
+                        query1 = f"EXEC SP_CHILDREN_REPORT @teach_fname = '{teacher.split()[0]}', @teach_lname = '{teacher.split()[1]}'"
+                        df1 = pd.read_sql(query1, conn)
+                        table1 = f'\n{df1.to_string(index=False)}'
+                        file.write(table1)
             conn.close()
         print(f"Video saved to {output_path}")
         print(f"Emotion information saved to {file_path}")

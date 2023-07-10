@@ -1,0 +1,4 @@
+  ACT_NAME  CHILDREN_LIKE  CHILDREN_DO_NOT_LIKE  CHILDREN_MIGHT_LIKE  CHILDREN_NOT_SURE
+Basketball              0                     1                    0                  0
+   Bowling              0                     1                    1                  0
+    Tennis              0                     0                    1                  0
