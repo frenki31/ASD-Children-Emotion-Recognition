@@ -19,7 +19,7 @@ conn = pyodbc.connect(f'DRIVER={{SQL Server}};SERVER={server};DATABASE={database
 if conn:
     print('Connection okay')
 cursor = conn.cursor()
-model = load_model(r'C:\Users\user\PycharmProjects\emotionRecognition\emotion_detection_model.h5')
+model = load_model(r'C:\Users\user\PycharmProjects\emotionRecognition\model\emotion_detection_model.h5')
 emotions = ['Angry','Disgusted','Fearful','Happy','Neutral', 'Sad', 'Surprised']
 
 def face_matching(face_distance, face_match=0.6):
@@ -80,7 +80,7 @@ class Recognition:
             cursor.execute('INSERT INTO ACTIVITY(ACT_NAME) VALUES (?)', activity)
             # conn.commit()
         start_time = datetime.now()
-        video_capture = cv2.VideoCapture(0)
+        video_capture = cv2.VideoCapture("videos/video (2160p).mp4")
 
         if not video_capture.isOpened():
             print('Video source not found...')
@@ -167,9 +167,10 @@ class Recognition:
         cv2.destroyAllWindows()
         end_time = datetime.now()
 
+        path = 'report/'
         # save a video record
         output_path = 'emotions_record.mp4'
-        output = cv2.VideoWriter(output_path, cv2.VideoWriter_fourcc(*"mp4v"), 60, size)
+        output = cv2.VideoWriter(os.path.join(path, output_path), cv2.VideoWriter_fourcc(*"mp4v"), 60, size)
 
         for frame in self.frame_list:
             output.write(frame)
@@ -178,7 +179,7 @@ class Recognition:
         # Save people's emotions to a file
         file_path = 'people_emotions.txt'
         emotion_with_max_count = {}
-        with open(file_path, 'w') as file:
+        with open(os.path.join(path, file_path), 'w') as file:
 
             line0 = f'Today on {start_time:%d/%m/%Y} teacher {teacher} taught the children: "{activity}".\n' \
                     f'The session began at {start_time:%H:%M:%S} and ended at {end_time:%H:%M:%S}.\n'
@@ -234,7 +235,7 @@ class Recognition:
                 query = f"EXEC SP_TEACHER_REPORT @teach_fname = '{teacher.split()[0]}', @teach_lname='{teacher.split()[1]}'"
                 df = pd.read_sql(query, conn)
                 table = f'{df.to_string(index=False)}\n'
-                with open('report.txt', 'w') as file:
+                with open('report/report.txt', 'w') as file:
                     file.write(table)
                     question1 = simpledialog.askstring('Question', 'Do you want the children names in your all-time report? (y/n)')
                     if question1 in ['y','Y','Yes','yes']:

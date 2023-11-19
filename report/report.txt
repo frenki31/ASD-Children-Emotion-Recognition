@@ -1,0 +1,15 @@
+  ACT_NAME  CHILDREN_LIKE  CHILDREN_DO_NOT_LIKE  CHILDREN_MIGHT_LIKE  CHILDREN_NOT_SURE
+Basketball              0                     1                    0                  0
+   Bowling              0                     1                    1                  0
+  Football              0                     0                    1                  0
+ Ping Pong              0                     0                    1                  0
+    Tennis              0                     0                    2                  0
+
+    CHILD_NAME   ACT_NAME      ACT_LIKE
+ Many children   Football    Might like
+   Frenki Muca     Tennis    Might like
+Unknown Person     Tennis    Might like
+   Frenki Muca    Bowling Does not like
+   Frenki Muca    Bowling    Might like
+   Frenki Muca Basketball Does not like
+   Frenki Muca  Ping Pong    Might like
