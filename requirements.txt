@@ -30,14 +30,14 @@ optree==0.11.0
 packaging==24.0
 pandas==2.2.1
 pillow==10.2.0
-pip==24.0
+pip==24.3.1
 protobuf==4.25.3
 pyodbc==5.1.0
 python-dateutil==2.9.0.post0
 pytz==2024.1
-requests==2.31.0
+requests==2.32.3
 rich==13.7.1
-setuptools==69.2.0
+setuptools==75.8.0
 six==1.16.0
 tensorboard==2.16.2
 tensorboard-data-server==0.7.2

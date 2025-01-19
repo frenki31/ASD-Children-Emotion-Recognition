@@ -1,8 +1,8 @@
 import os
-import database
+#import database
 
 def reports(cv2, size, frame_list, start_time, teacher, activity, end_time, people_emotions, simpledialog):
-    path = '../report/'
+    path = './report/'
     # save a video record
     output_path = 'emotions_record.mp4'
     output = cv2.VideoWriter(os.path.join(path, output_path), cv2.VideoWriter_fourcc(*"mp4v"), 60, size)
@@ -28,7 +28,7 @@ def reports(cv2, size, frame_list, start_time, teacher, activity, end_time, peop
                 # else:
                 #     person = "Many children"
             # Check if person exists in the table
-            database.enter_person(person)
+            #database.enter_person(person)
             emotions_count = ', '.join([f'{emotion} {count} times' for emotion, count in person_emotions.items()])
             # if person == "Many children":
             #     line = f'{person} were {emotions_count}.'
@@ -49,20 +49,20 @@ def reports(cv2, size, frame_list, start_time, teacher, activity, end_time, peop
         many_emotions = [person for person, emotion in emotion_with_max_count.items() if len(emotion.split(',')) > 1]
         if like_activity:
             file.write(f'\nThe children who like to do "{activity}": {", ".join(like_activity)}.\n')
-            database.insert_emotions(activity, teacher, person, start_time, end_time, "Likes")
+            #database.insert_emotions(activity, teacher, person, start_time, end_time, "Likes")
         if do_not_like_activity:
             file.write(f'\nThe children who do not like to do "{activity}": {", ".join(do_not_like_activity)}.\n')
-            database.insert_emotions(activity, teacher, person, start_time, end_time, "Does not like")
+            #database.insert_emotions(activity, teacher, person, start_time, end_time, "Does not like")
         if might_like_activity:
             file.write(f'\nThe children who might like to do "{activity}": {", ".join(might_like_activity)}.\n')
-            database.insert_emotions(activity, teacher, person, start_time, end_time, "Might like")
+            #database.insert_emotions(activity, teacher, person, start_time, end_time, "Might like")
         if many_emotions:
             file.write(
                 f'\nThe children who had many different emotions while doing "{activity}": {", ".join(many_emotions)}.\n')
-            database.insert_emotions(activity, teacher, person, start_time, end_time, "Not sure")
-        database.conn.commit()
-        database.cursor.close()
-
+            #database.insert_emotions(activity, teacher, person, start_time, end_time, "Not sure")
+        #database.conn.commit()
+        #database.cursor.close()
+        '''
         question = simpledialog.askstring('Question', 'Do you want to have your all-time report? (y/n)')
         if question in ['y', 'Y', 'Yes', 'yes']:
             df = database.teacher_dataframe(teacher)
@@ -76,5 +76,6 @@ def reports(cv2, size, frame_list, start_time, teacher, activity, end_time, peop
                     table1 = f'\n{df1.to_string(index=False)}'
                     file.write(table1)
         database.conn.close()
+        '''
     print(f"Video saved to {output_path}")
     print(f"Emotion information saved to {file_path}")

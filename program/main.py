@@ -7,11 +7,13 @@ from keras.models import load_model
 import tkinter as tk
 from tkinter import simpledialog
 from datetime import datetime
-import database
+#import database
 from file import reports
 from analysis import face_matching, analyze_faces
+import os
 
-model = load_model(r'../model/emotion_detection_model.h5')
+model_path = os.path.abspath('./model/emotion_detection_model.h5')
+model = load_model(model_path)
 emotions = ['Angry','Disgusted','Fearful','Happy','Neutral', 'Sad', 'Surprised']
 
 class Recognition:
@@ -27,7 +29,7 @@ class Recognition:
     face_emotions = []
 
     def __init__(self):
-        with open('../model/encoding.pickle', 'rb') as f:
+        with open('./model/encoding.pickle', 'rb') as f:
             self.known_face_names = pickle.load(f)
             self.known_face_encodings = pickle.load(f)
 
@@ -100,10 +102,10 @@ class Recognition:
         teacher = simpledialog.askstring("Teacher", "Teacher, can you please introduce yourself?")
         activity = simpledialog.askstring("Activity", f'{teacher.split()[0]}, what is the activity for today?')
         window.destroy()
-        database.enter_teacher(teacher)
-        database.enter_activity(activity)
+        #database.enter_teacher(teacher)
+        #database.enter_activity(activity)
         start_time = datetime.now()
-        video_capture = cv2.VideoCapture("../videos/ASD.mp4")
+        video_capture = cv2.VideoCapture("./videos/ASD.mp4")
 
         if not video_capture.isOpened():
             print('Video source not found...')
