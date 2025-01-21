@@ -50,7 +50,4 @@ tzdata==2024.1
 urllib3==2.3.0
 wheel==0.43.0
 wrapt==1.16.0
-streamlit
-face_recognition
-opencv-python
-numpy
+streamlit==1.41.1
